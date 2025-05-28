@@ -202,10 +202,8 @@ import path from "path";
 import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
 import { fileURLToPath } from "url";
+import { pool } from "./db.js";
 
-// LowDB imports
-import { Low } from "lowdb";
-import { JSONFile } from "lowdb/node";
 
 // Setup .env and dirs
 dotenv.config();
@@ -214,16 +212,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-// Initialize lowdb
-const adapter = new JSONFile(path.join(__dirname, "db.json"));
-const defaultData = { posts: [] };
-const db = new Low(adapter, defaultData)
 
-//const db = new Low(adapter);
-
-await db.read();
-// db.data = db.data || { posts: [] }; // default data
-await db.write();
 
 // Express app
 const app = express();
@@ -231,6 +220,28 @@ app.use(cors());
 app.use(express.json()); 
 
 // Create a new post
+// app.post("/posts", async (req, res) => {
+//   const { title, author, content } = req.body;
+
+//   if (!title || !author || !content) {
+//     return res.status(400).json({ message: "Title, author, and content are required" });
+//   }
+
+//   const newPost = {
+//     id: uuidv4(),
+//     title,
+//     author,
+//     content,
+//     createdAt: new Date().toISOString(),
+//   };
+
+//   db.data.posts.push(newPost);
+//   await db.write();
+
+//   res.status(201).json({ message: "Post created", id: newPost.id });
+// });
+
+
 app.post("/posts", async (req, res) => {
   const { title, author, content } = req.body;
 
@@ -238,52 +249,101 @@ app.post("/posts", async (req, res) => {
     return res.status(400).json({ message: "Title, author, and content are required" });
   }
 
-  const newPost = {
-    id: uuidv4(),
-    title,
-    author,
-    content,
-    createdAt: new Date().toISOString(),
-  };
-
-  db.data.posts.push(newPost);
-  await db.write();
-
-  res.status(201).json({ message: "Post created", id: newPost.id });
+  try {
+    const result = await pool.query(
+      `INSERT INTO posts (title, author, content, created_at) VALUES ($1, $2, $3, NOW()) RETURNING id`,
+      [title, author, content]
+    );
+    res.status(201).json({ message: "Post created", id: result.rows[0].id });
+  } catch (error) {
+    console.error("Error inserting post:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
-// Get all posts
+
+
+// // Get all posts
+
+// app.get("/posts", async (req, res) => {
+//   await db.read();
+//   res.json(db.data.posts);
+// });
+
+
 app.get("/posts", async (req, res) => {
-  await db.read();
-  res.json(db.data.posts);
+  try {
+    const result = await pool.query("SELECT * FROM posts ORDER BY created_at DESC");
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
+
+
+
+
 
 // Get post by ID
+// app.get("/posts/:id", async (req, res) => {
+//   await db.read();
+//   const post = db.data.posts.find((p) => p.id === req.params.id);
+
+//   if (!post) {
+//     return res.status(404).json({ message: "Post not found" });
+//   }
+
+//   res.json(post);
+// });
+
 app.get("/posts/:id", async (req, res) => {
-  await db.read();
-  const post = db.data.posts.find((p) => p.id === req.params.id);
-
-  if (!post) {
-    return res.status(404).json({ message: "Post not found" });
+  try {
+    const result = await pool.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error fetching post:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-
-  res.json(post);
 });
+
+
+
 
 // Delete post by ID
+// app.delete("/posts/:id", async (req, res) => {
+//   await db.read();
+//   const index = db.data.posts.findIndex((p) => p.id === req.params.id);
+
+//   if (index === -1) {
+//     return res.status(404).json({ message: "Post not found or already deleted" });
+//   }
+
+//   db.data.posts.splice(index, 1);
+//   await db.write();
+
+//   res.json({ message: "Post deleted successfully" });
+// });
+
+
 app.delete("/posts/:id", async (req, res) => {
-  await db.read();
-  const index = db.data.posts.findIndex((p) => p.id === req.params.id);
-
-  if (index === -1) {
-    return res.status(404).json({ message: "Post not found or already deleted" });
+  try {
+    const result = await pool.query("DELETE FROM posts WHERE id = $1", [req.params.id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Post not found or already deleted" });
+    }
+    res.json({ message: "Post deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-
-  db.data.posts.splice(index, 1);
-  await db.write();
-
-  res.json({ message: "Post deleted successfully" });
 });
+
+
+
 
 // Start server
 app.listen(PORT, () => {
