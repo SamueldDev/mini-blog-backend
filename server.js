@@ -229,7 +229,7 @@ app.use(express.json());
 
 
 app.post("/posts", async (req, res) => {
-    console.log("✅ New post added:", result.rows[0]);
+   
 
   const { title, author, content } = req.body;
 
@@ -242,6 +242,8 @@ app.post("/posts", async (req, res) => {
       `INSERT INTO posts (title, author, content, created_at) VALUES ($1, $2, $3, NOW()) RETURNING id`,
       [title, author, content]
     );
+     console.log("✅ New post added:", result.rows[0]);
+     
     res.status(201).json({ message: "Post created", id: result.rows[0].id });
   } catch (error) {
     console.error("Error inserting post:", error);
