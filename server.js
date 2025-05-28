@@ -193,14 +193,21 @@
 
 
 
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
 
-// db.js
-// server.js
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection:", reason);
+});
+
+
+
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
 import cors from "cors";
-import { v4 as uuidv4 } from "uuid";
+// import { v4 as uuidv4 } from "uuid";
 import { fileURLToPath } from "url";
 import { pool } from "./db.js";
 
@@ -214,35 +221,16 @@ const __dirname = path.dirname(__filename);
 
 
 
+
 // Express app
 const app = express();
 app.use(cors());
 app.use(express.json()); 
 
-// Create a new post
-// app.post("/posts", async (req, res) => {
-//   const { title, author, content } = req.body;
-
-//   if (!title || !author || !content) {
-//     return res.status(400).json({ message: "Title, author, and content are required" });
-//   }
-
-//   const newPost = {
-//     id: uuidv4(),
-//     title,
-//     author,
-//     content,
-//     createdAt: new Date().toISOString(),
-//   };
-
-//   db.data.posts.push(newPost);
-//   await db.write();
-
-//   res.status(201).json({ message: "Post created", id: newPost.id });
-// });
-
 
 app.post("/posts", async (req, res) => {
+    console.log("✅ New post added:", result.rows[0]);
+
   const { title, author, content } = req.body;
 
   if (!title || !author || !content) {
@@ -262,16 +250,7 @@ app.post("/posts", async (req, res) => {
 });
 
 
-
-// // Get all posts
-
-// app.get("/posts", async (req, res) => {
-//   await db.read();
-//   res.json(db.data.posts);
-// });
-
-
-app.get("/posts", async (req, res) => {
+app.get("/posts", async (req, res) => { 
   try {
     const result = await pool.query("SELECT * FROM posts ORDER BY created_at DESC");
     res.json(result.rows);
@@ -282,20 +261,6 @@ app.get("/posts", async (req, res) => {
 });
 
 
-
-
-
-// Get post by ID
-// app.get("/posts/:id", async (req, res) => {
-//   await db.read();
-//   const post = db.data.posts.find((p) => p.id === req.params.id);
-
-//   if (!post) {
-//     return res.status(404).json({ message: "Post not found" });
-//   }
-
-//   res.json(post);
-// });
 
 app.get("/posts/:id", async (req, res) => {
   try {
@@ -313,22 +278,6 @@ app.get("/posts/:id", async (req, res) => {
 
 
 
-// Delete post by ID
-// app.delete("/posts/:id", async (req, res) => {
-//   await db.read();
-//   const index = db.data.posts.findIndex((p) => p.id === req.params.id);
-
-//   if (index === -1) {
-//     return res.status(404).json({ message: "Post not found or already deleted" });
-//   }
-
-//   db.data.posts.splice(index, 1);
-//   await db.write();
-
-//   res.json({ message: "Post deleted successfully" });
-// });
-
-
 app.delete("/posts/:id", async (req, res) => {
   try {
     const result = await pool.query("DELETE FROM posts WHERE id = $1", [req.params.id]);
@@ -341,7 +290,6 @@ app.delete("/posts/:id", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
 
 
 
