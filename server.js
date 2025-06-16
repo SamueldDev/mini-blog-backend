@@ -1,158 +1,93 @@
 
-// // imports
-// import express from "express"
-// import dotenv from "dotenv"
-// import path from "path"
-// import slugify from "slugify"
-// import fs from "fs"
-// import { fileURLToPath} from "url"
-// import { v4 as uuidv4 } from 'uuid';
-// import cors from "cors"
 
-// dotenv.config()
+// import express from "express";
+// import dotenv from "dotenv";
+// import path from "path";
+// import cors from "cors";
+// // import { v4 as uuidv4 } from "uuid";
+// import { fileURLToPath } from "url";
+// import { pool } from "./db.js";
 
-// const PORT = process.env.PORT || 3000;
-
-// // get filename and directory
+// // Setup .env and dirs
+// dotenv.config();
+// const PORT = process.env.PORT || 7030;
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
 
-// const POSTS_DIR = path.join(__dirname, "posts");
-
-// // express app initialization
-// const app = express()
-
-// // middleware to parse JSON data
-// app.use(express.json())
-
-// // // serve public file
-// // app.use(express.static('public'))
-
-// // allow cors
+// // Express app
+// const app = express();
 // app.use(cors());
+// app.use(express.json()); 
 
+// // make a post
+// app.post("/posts", async (req, res) => {
+   
+//   const { title, author, content } = req.body;
 
-// // post blog
-// app.post("/posts", (req, res) => {
-    
-//     const { author, title, content } = req.body // extract json data
+//   if (!title || !author || !content) {
+//     return res.status(400).json({ message: "Title, author, and content are required" });
+//   }
 
-//     // simple validation
-//     if(!title || !author || !content){
-//         return res.status(400).json({
-//             message: "Title, author and content are required"
-//         })
-//     }
+//   try {
+//     const result = await pool.query(
+//       `INSERT INTO posts (title, author, content, created_at) VALUES ($1, $2, $3, NOW()) RETURNING id`,
+//       [title, author, content]
+//     );
+//      console.log("✅ New post added:", result.rows[0]);
 
-//     // generate filename
-//     const slug = slugify(title, {lower: true, strict: true});
-//     const timestamp = Date.now()
-//     // const filename = `${slug}-${timestamp}.json`
-//     const id = uuidv4();
-//     const filePath = path.join(POSTS_DIR, `${id}.json`);
-
-//     //const filePath = path.join(__dirname, "posts", `${id}.json`)
-  
-
-//     // create blog post object
-//     const post = {
-//         id,
-//         title, 
-//         author,
-//         content,
-//         slug: `${slug}-${timestamp}`,
-//         createdAt: new Date().toISOString(),
-        
-//         // date: new Date().toISOString
-//     }
-
-
-//     // write to a file
-//     fs.writeFile(filePath, JSON.stringify(post, null, 2), (err) => {
-//         if(err){
-//             console.error("Error saving file:", err.message)
-//             return res.status(500).json({ message: "falied to save blog post"})
-//         }
-//         res.status(201).json({ message: "Blog post saved.", id})
-//     })
-
-// })
-
+//     res.status(201).json({ message: "Post created", id: result.rows[0].id });
+//   } catch (error) {
+//     console.error("Error inserting post:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// });
 
 // // get all posts
-
-// app.get("/posts", (req, res) => {
-//     fs.readdir(POSTS_DIR, (err, files) => {
-//         if(err){
-//             console.error("failed to read post directory:", err.message)
-//         }
-
-//         // read only json files
-//         const jsonFiles = files.filter(file => file.endsWith(".json"));
-
-
-//         // push all post to a new array
-//          const posts = [];
-
-//         // read and parse each post file
-//         jsonFiles.forEach(file => {
-//             const filePath = path.join(POSTS_DIR, file);
-//             const data = fs.readFileSync(filePath, "utf-8")
-            
-//         try{
-//             const post = JSON.parse(data);
-//             posts.push({
-//                 id: post.id,
-//                 title: post.title,
-//                 author: post.author,
-//                 content: post.content,
-//                 slug: post.slug,
-//                 createdAt: post.createdAt
-               
-//             })
-//         } catch(err){
-//             console.error(`failed to parse ${file}`)
-//         }
-
-//         })
-//            res.json(posts)
-
-//     })
-// })
-
-// app.get("/posts/:id", (req, res) => {
-//     const { id } = req.params
-//     const filePath = path.join(POSTS_DIR, `${id}.json`)
-
-//     fs.readFile(filePath, "utf-8", (err, data) => {
-//         if(err){
-//             return res.status(404).json({ message : "Post not found"})
-//         }
-
-//         try{
-//             const post = JSON.parse(data);
-//             res.json(post)
-//         } catch{
-//             res.status(500).json({message: "failed to parse post"})
-//         }
-//     })
-// })
+// app.get("/posts", async (req, res) => { 
+//   try {
+//     const result = await pool.query("SELECT * FROM posts ORDER BY created_at DESC");
+//     res.json(result.rows);
+//   } catch (error) {
+//     console.error("Error fetching posts:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// });
 
 
-// app.delete("/posts/:id", (req, res) => {
-//     const { id } = req.params
-//     const filepath = path.join(POSTS_DIR, `${id}.json`); 
-//     fs.unlink(filepath, (err) => {
-//         if(err) return res.status(404).json({ message : "post not found or already deleted"});
-//         res.json({ message: "Post deleted successfully"});
+// // get post by id
+// app.get("/posts/:id", async (req, res) => {
+//   try {
+//     const result = await pool.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
+//     if (result.rows.length === 0) {
+//       return res.status(404).json({ message: "Post not found" });
+//     }
+//     res.json(result.rows[0]);
+//   } catch (error) {
+//     console.error("Error fetching post:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// });
 
-//     })
-// })
 
-// // listen to the port
+// // delete a post by id
+// app.delete("/posts/:id", async (req, res) => {
+//   try {
+//     const result = await pool.query("DELETE FROM posts WHERE id = $1", [req.params.id]);
+//     if (result.rowCount === 0) {
+//       return res.status(404).json({ message: "Post not found or already deleted" });
+//     }
+//     res.json({ message: "Post deleted successfully" });
+//   } catch (error) {
+//     console.error("Error deleting post:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// });
+
+
+// // Start server
 // app.listen(PORT, () => {
-//     console.log(`server running at port:${PORT}`) 
-// })
+//   console.log(`Server running at http://localhost:${PORT}`);
+// });
 
 
 
@@ -193,110 +128,83 @@
 
 
 
-process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception:", err);
-});
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection:", reason);
-});
-
-
-
-import express from "express";
-import dotenv from "dotenv";
-import path from "path";
-import cors from "cors";
-// import { v4 as uuidv4 } from "uuid";
-import { fileURLToPath } from "url";
-import { pool } from "./db.js";
-
-
-// Setup .env and dirs
-dotenv.config();
-const PORT = process.env.PORT || 7030;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 
 
 
 
-// Express app
-const app = express();
-app.use(cors());
-app.use(express.json()); 
-
-
-app.post("/posts", async (req, res) => {
-   
-
-  const { title, author, content } = req.body;
-
-  if (!title || !author || !content) {
-    return res.status(400).json({ message: "Title, author, and content are required" });
-  }
-
-  try {
-    const result = await pool.query(
-      `INSERT INTO posts (title, author, content, created_at) VALUES ($1, $2, $3, NOW()) RETURNING id`,
-      [title, author, content]
-    );
-     console.log("✅ New post added:", result.rows[0]);
-     
-    res.status(201).json({ message: "Post created", id: result.rows[0].id });
-  } catch (error) {
-    console.error("Error inserting post:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-
-app.get("/posts", async (req, res) => { 
-  try {
-    const result = await pool.query("SELECT * FROM posts ORDER BY created_at DESC");
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Error fetching posts:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
 
 
 
-app.get("/posts/:id", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM posts WHERE id = $1", [req.params.id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Post not found" });
+
+
+
+
+
+
+
+
+
+
+import express from "express"
+import cors from "cors"
+import sequelize from "./config/db.js"
+import dotenv from "dotenv"
+dotenv.config()
+import userRoute  from "./routes/userRoute.js"
+import postRoute from "./routes/postRoute.js"
+
+const PORT = process.env.PORT || 5000;
+
+
+const app = express()
+
+app.use(cors())
+
+app.use(express.json())
+
+app.get("/", (req, res) => {
+  res.send("mini_blog API is Live")
+})
+
+app.use("/api/user", userRoute)
+app.use("/api/posts", postRoute)  
+
+
+const start = async () => {
+    try{
+
+      await sequelize.authenticate()
+      console.log('DB connnected')
+
+      await sequelize.sync({ alter: true})
+      console.log("database synced ")
+
+      //  await sequelize.sync({ force: true})
+      // console.log("tabeles dropped and recreated ")
+
+      app.listen(PORT, () => {
+        console.log(`server running on port ${PORT}`)
+      })
+
+    }catch(err){  
+        console.error("Unable to connect to database:", err)
     }
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error("Error fetching post:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
+}
+
+
+start()
 
 
 
 
-app.delete("/posts/:id", async (req, res) => {
-  try {
-    const result = await pool.query("DELETE FROM posts WHERE id = $1", [req.params.id]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ message: "Post not found or already deleted" });
-    }
-    res.json({ message: "Post deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting post:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
 
 
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+
+
+
+
+
+
 
