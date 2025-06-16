@@ -153,11 +153,14 @@ import dotenv from "dotenv"
 dotenv.config()
 import userRoute  from "./routes/userRoute.js"
 import postRoute from "./routes/postRoute.js"
+import { setupSwagger } from "./config/swagger.js"
 
 const PORT = process.env.PORT || 5000;
 
 
 const app = express()
+
+setupSwagger(app)
 
 app.use(cors())
 
@@ -175,7 +178,7 @@ const start = async () => {
     try{
 
       await sequelize.authenticate()
-      console.log('DB connnected')
+      console.log('DB connected')
 
       await sequelize.sync({ alter: true})
       console.log("database synced ")

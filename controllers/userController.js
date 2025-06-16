@@ -121,7 +121,7 @@ export const requestPasswordReset = async (req, res) => {
     sendResetEmail(user.email, token);
 
     res.json({ 
-        message: "Reset link sent if email is valid.",
+        message: "Reset link sent if email is valid. Also check your spam box as the case may be",
         token
     });
 
