@@ -9,16 +9,44 @@ import { authenticate } from "../middleware/protectedAction.js"
 const router = express.Router()
 
 
-
 /**
  * @swagger
  * /api/posts:
  *   get:
- *     summary: Get all posts
+ *     summary: Get all posts for the logged-in user
  *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of posts
+ *         description: List of user posts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   title:
+ *                     type: string
+ *                   subject:
+ *                     type: string
+ *                   body:
+ *                     type: string
+ *                   userId:
+ *                     type: integer
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *       401:
+ *         description: Unauthorized – No or invalid token
+ *       500:
+ *         description: Server error
  */
 
 router.get("/", authenticate,  getUserPosts)
@@ -30,6 +58,8 @@ router.get("/", authenticate,  getUserPosts)
  *   post:
  *     summary: Create a post
  *     tags: [Posts]
+ *     security:
+ *      - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:

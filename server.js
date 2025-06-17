@@ -162,7 +162,15 @@ const app = express()
 
 setupSwagger(app)
 
-app.use(cors())
+//app.use(cors())
+
+// Recommended for now
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 
 app.use(express.json())
 
@@ -178,7 +186,7 @@ const start = async () => {
     try{
 
       await sequelize.authenticate()
-      console.log('DB connected')
+      console.log('DB connnected')
 
       await sequelize.sync({ alter: true})
       console.log("database synced ")
