@@ -11,7 +11,7 @@ export const sendResetEmail = async (to, token) => {
   
   // const resetLink = `${process.env.APP_BASE_URL}/api/user/reset-password/${token}`;
   
-  const resetLink = `https://blogpage-sam.netlify.app/api/user/reset-password/${token}`;
+  const resetLink = `https://blogpage-sam.netlify.app/reset-password/${token}`;
 
   const msg = {
     to,
