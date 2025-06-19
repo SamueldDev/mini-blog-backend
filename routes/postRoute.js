@@ -2,7 +2,7 @@
 
 import express from "express"
 
-import { getUserPosts, deletePost, createPost } from "../controllers/postController.js"
+import { getUserPosts, deletePost, createPost, updatePost } from "../controllers/postController.js"
 import { authenticate } from "../middleware/protectedAction.js"
 
 
@@ -113,6 +113,9 @@ router.post('/', authenticate, createPost);
  */
 router.delete('/:id', authenticate, deletePost);
 
+
+
+router.put("/posts/:id", authenticate, updatePost);
 
 
 
