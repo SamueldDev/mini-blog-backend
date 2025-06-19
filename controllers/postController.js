@@ -88,3 +88,47 @@ export const deletePost = async (req, res) => {
     });
   }
 };
+
+
+
+// update a post
+// ✅ Update a post (only if it belongs to the user)
+export const updatePost = async (req, res) => {
+  const { title, subject, body } = req.body;
+
+  try {
+    const post = await Post.findOne({
+      where: {
+        id: req.params.id,
+        userId: req.user.id,
+      },
+    });
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found or unauthorized" });
+    }
+
+    post.title = title || post.title;
+    post.subject = subject || post.subject;
+    post.body = body || post.body;
+
+    await post.save();
+
+    res.json({
+      message: "Post updated successfully",
+      post,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to update post",
+      error: err.message,
+    });
+  }
+};
+
+
+
+
+
+
+
