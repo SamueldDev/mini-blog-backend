@@ -8,7 +8,10 @@ import sgMail from "@sendgrid/mail";
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 export const sendResetEmail = async (to, token) => {
-  const resetLink = `${process.env.APP_BASE_URL}/api/user/reset-password/${token}`;
+  
+  // const resetLink = `${process.env.APP_BASE_URL}/api/user/reset-password/${token}`;
+  
+  const resetLink = `https://blogpage-sam.netlify.app/api/user/reset-password/${token}`;
 
   const msg = {
     to,
