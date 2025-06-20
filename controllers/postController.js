@@ -128,6 +128,26 @@ export const updatePost = async (req, res) => {
 
 
 
+// ✅ Get a single post (only if it belongs to the user)
+export const getSinglePost = async (req, res) => {
+  try {
+    const post = await Post.findOne({
+      where: {
+        id: req.params.id,
+        userId: req.user.id,
+      },
+    });
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found or unauthorized" });
+    }
+
+    res.json(post);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch post", error: err.message });
+  }
+};
+
 
 
 
