@@ -115,9 +115,9 @@ router.delete('/:id', authenticate, deletePost);
 
 
 
-router.put("/posts/:id", authenticate, updatePost);
+router.put("/:id", authenticate, updatePost);
 
-router.get("/posts/:id", authenticate, getSinglePost);
+router.get("/:id", authenticate, getSinglePost);
 
 
 export default router
