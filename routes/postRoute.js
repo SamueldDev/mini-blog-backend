@@ -2,7 +2,7 @@
 
 import express from "express"
 
-import { getUserPosts, deletePost, createPost, updatePost } from "../controllers/postController.js"
+import { getUserPosts, deletePost, createPost, updatePost, getSinglePost } from "../controllers/postController.js"
 import { authenticate } from "../middleware/protectedAction.js"
 
 
